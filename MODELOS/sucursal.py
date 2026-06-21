@@ -6,7 +6,6 @@ class Sucursal:
         self.__id = id
         self.__nombre = nombre
         self.__direccion = direccion
-        self.__sistema = SistemaAlquiler()  # composición: la sucursal posee su propio sistema
 
     def get_id(self):
         return self.__id
@@ -16,6 +15,3 @@ class Sucursal:
 
     def get_direccion(self):
         return self.__direccion
-
-    def get_sistema(self):
-        return self.__sistema

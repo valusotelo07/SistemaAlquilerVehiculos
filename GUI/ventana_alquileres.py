@@ -70,7 +70,7 @@ class PanelAlquileres(ctk.CTkFrame):
         )
         self.btn_guardar.pack(pady=(20, 10))
 
-        # --- ETIQUETA PARA MENSAJES ---
+        
         self.lbl_mensaje = ctk.CTkLabel(self.tarjeta, text="", font=("Arial", 14, "bold"))
         self.lbl_mensaje.pack(pady=5)
 
@@ -89,12 +89,10 @@ class PanelAlquileres(ctk.CTkFrame):
             fecha_inicio = datetime.strptime(str_inicio, "%d/%m/%Y").date()
             fecha_fin = datetime.strptime(str_fin, "%d/%m/%Y").date()
 
-            # VALIDACIÓN: Fecha no puede ser anterior a HOY
             if fecha_inicio < date.today():
                 self.lbl_mensaje.configure(text="❌ Error: La fecha de inicio no puede ser pasada.", text_color="#d83a3a")
                 return
 
-            # VALIDACIÓN: Fecha fin no puede ser anterior a inicio
             if fecha_fin < fecha_inicio:
                 self.lbl_mensaje.configure(text="❌ Error: La fecha fin no puede ser anterior al inicio.", text_color="#d83a3a")
                 return
@@ -109,15 +107,13 @@ class PanelAlquileres(ctk.CTkFrame):
                 self.lbl_mensaje.configure(text="❌ Error interno: no se encontró el cliente o vehículo.", text_color="#d83a3a")
                 return
 
-            id_alquiler = len(self.sistema.obtener_alquileres()) + 1
-
-            nuevo_alquiler = Alquiler(id_alquiler, cliente_obj, vehiculo_obj, fecha_inicio, fecha_fin, self.sucursal)
-            self.sistema.procesar_alquiler(nuevo_alquiler)
+            nuevo_alquiler = self.sistema.procesar_alquiler(cliente_obj, vehiculo_obj, fecha_inicio, fecha_fin, self.sucursal)
+            
+            id_alquiler = nuevo_alquiler.get_id_alquiler()
             
             comprobante = Comprobante(id_alquiler, nuevo_alquiler)
             mensaje_exito = comprobante.emitir()
             
-            # Limpiamos los campos y el mensaje de error por si había uno
             self.lbl_mensaje.configure(text="")
             self.entry_inicio.delete(0, 'end')
             self.entry_fin.delete(0, 'end')

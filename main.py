@@ -3,6 +3,7 @@ from modelos.sucursal import Sucursal
 from gui.ventana_clientes import PanelClientes
 from gui.ventana_alquileres import PanelAlquileres
 from gui.ventana_vehiculos import PanelVehiculos
+from sistema.sistema_alquiler import SistemaAlquiler
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -11,7 +12,7 @@ class App(ctk.CTk):
     def __init__(self, sucursal):
         super().__init__()
         self.sucursal = sucursal
-        self.sistema = sucursal.get_sistema()
+        self.sistema = SistemaAlquiler()
 
         self.title(f"NovaDrive - Sucursal {sucursal.get_nombre()}")
         self.geometry("900x600")
