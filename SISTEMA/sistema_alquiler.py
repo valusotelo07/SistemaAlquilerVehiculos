@@ -1,3 +1,4 @@
+from datetime import date
 from modelos.cliente import Cliente
 from modelos.alquiler import Alquiler
 
@@ -17,7 +18,7 @@ class SistemaAlquiler:
     def procesar_alquiler(self, alquiler):
         self.__alquileres.append(alquiler)
 
-    # --- OPERACIONES DE BÚSQUEDA (Esto era lo que faltaba) ---
+    # --- OPERACIONES DE BÚSQUEDA ---
     def buscar_cliente_por_dni(self, dni):
         for cliente in self.__clientes:
             if cliente.get_dni() == dni:
@@ -39,3 +40,14 @@ class SistemaAlquiler:
 
     def obtener_alquileres(self):
         return self.__alquileres
+
+    # --- DISPONIBILIDAD ---
+    def verificar_disponibilidad(self):
+        hoy = date.today()
+        vehiculos_ocupados = {
+            alquiler.get_vehiculo().get_id()
+            for alquiler in self.__alquileres
+            if not alquiler.esta_devuelto()
+            and alquiler.get_fecha_inicio() <= hoy <= alquiler.get_fecha_fin()
+        }
+        return [v for v in self.__vehiculos if v.get_id() not in vehiculos_ocupados]

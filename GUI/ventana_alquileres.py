@@ -30,9 +30,10 @@ class VentanaComprobante(ctk.CTkToplevel):
 # PANEL CENTRAL DE ALQUILERES
 # ==========================================
 class PanelAlquileres(ctk.CTkFrame):
-    def __init__(self, master, sistema):
+    def __init__(self, master, sistema, sucursal):
         super().__init__(master, fg_color="transparent")
         self.sistema = sistema
+        self.sucursal = sucursal
         
         self.tarjeta = ctk.CTkFrame(self, corner_radius=15)
         self.tarjeta.pack(pady=40, padx=40, fill="both", expand=True)
@@ -104,9 +105,13 @@ class PanelAlquileres(ctk.CTkFrame):
             cliente_obj = self.sistema.buscar_cliente_por_dni(dni_cliente)
             vehiculo_obj = self.sistema.buscar_vehiculo_por_patente(patente_vehiculo)
 
+            if cliente_obj is None or vehiculo_obj is None:
+                self.lbl_mensaje.configure(text="❌ Error interno: no se encontró el cliente o vehículo.", text_color="#d83a3a")
+                return
+
             id_alquiler = len(self.sistema.obtener_alquileres()) + 1
 
-            nuevo_alquiler = Alquiler(id_alquiler, cliente_obj, vehiculo_obj, fecha_inicio, fecha_fin)
+            nuevo_alquiler = Alquiler(id_alquiler, cliente_obj, vehiculo_obj, fecha_inicio, fecha_fin, self.sucursal)
             self.sistema.procesar_alquiler(nuevo_alquiler)
             
             comprobante = Comprobante(id_alquiler, nuevo_alquiler)
