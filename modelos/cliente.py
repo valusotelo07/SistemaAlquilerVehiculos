@@ -1,6 +1,5 @@
 class Cliente:
     def __init__(self, id_cliente, dni, nombre, apellido):
-        # Atributos encapsulados (privados)
         self.__id = id_cliente
         self.__dni = dni
         self.__nombre = nombre
@@ -16,19 +15,16 @@ class Cliente:
         dni, nombre, apellido = datos_csv.split(',')
         return cls(id_cliente, dni, nombre, apellido)
 
-    # --- Getters (Métodos de acceso públicos) ---
-    def get_id(self):
-        return self.__id
+    # --- Getters ---
+    def get_id(self): return self.__id
+    def get_dni(self): return self.__dni
+    def get_nombre(self): return self.__nombre
+    def get_apellido(self): return self.__apellido
 
-    def get_dni(self):
-        return self.__dni
+    # --- Setters ---
+    def set_nombre(self, nombre): self.__nombre = nombre
+    def set_apellido(self, apellido): self.__apellido = apellido
+    def set_dni(self, dni): self.__dni = dni
 
-    def get_nombre(self):
-        return self.__nombre
-
-    def get_apellido(self):
-        return self.__apellido
-
-    # --- Métodos mágicos ---
     def __str__(self):
         return f"{self.__nombre} {self.__apellido} (DNI: {self.__dni})"
