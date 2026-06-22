@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import os
 from datetime import datetime, date
 from modelos.alquiler import Alquiler
 from modelos.comprobante import Comprobante
@@ -35,8 +36,16 @@ class PanelAlquileres(ctk.CTkFrame):
         self.sistema = sistema
         self.sucursal = sucursal
         
+        # Dividimos la pantalla en dos mitades
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        # ==========================================
+        # MITAD IZQUIERDA: FORMULARIO
+        # ==========================================
         self.tarjeta = ctk.CTkFrame(self, corner_radius=15)
-        self.tarjeta.pack(pady=40, padx=40, fill="both", expand=True)
+        self.tarjeta.grid(row=0, column=0, pady=40, padx=(40, 20), sticky="nsew")
 
         self.lbl_titulo = ctk.CTkLabel(self.tarjeta, text="📄 Generar Nuevo Alquiler", font=ctk.CTkFont(size=20, weight="bold"))
         self.lbl_titulo.pack(pady=(30, 15))
@@ -70,9 +79,22 @@ class PanelAlquileres(ctk.CTkFrame):
         )
         self.btn_guardar.pack(pady=(20, 10))
 
-        
         self.lbl_mensaje = ctk.CTkLabel(self.tarjeta, text="", font=("Arial", 14, "bold"))
         self.lbl_mensaje.pack(pady=5)
+
+        # ==========================================
+        # MITAD DERECHA: LISTA VISUAL
+        # ==========================================
+        self.tarjeta_lista = ctk.CTkFrame(self, corner_radius=15)
+        self.tarjeta_lista.grid(row=0, column=1, pady=40, padx=(20, 40), sticky="nsew")
+
+        self.lbl_titulo_lista = ctk.CTkLabel(self.tarjeta_lista, text="📋 Historial de Alquileres", font=ctk.CTkFont(size=20, weight="bold"))
+        self.lbl_titulo_lista.pack(pady=(30, 10))
+
+        self.scroll_lista = ctk.CTkScrollableFrame(self.tarjeta_lista, fg_color="transparent")
+        self.scroll_lista.pack(expand=True, fill="both", padx=20, pady=20)
+
+        self.actualizar_lista()
 
     def generar_alquiler(self):
         seleccion_cliente = self.cliente_var.get()
@@ -108,17 +130,82 @@ class PanelAlquileres(ctk.CTkFrame):
                 return
 
             nuevo_alquiler = self.sistema.procesar_alquiler(cliente_obj, vehiculo_obj, fecha_inicio, fecha_fin, self.sucursal)
-            
             id_alquiler = nuevo_alquiler.get_id_alquiler()
             
             comprobante = Comprobante(id_alquiler, nuevo_alquiler)
             mensaje_exito = comprobante.emitir()
+            
+            # --- GUARDAR EL TICKET FÍSICO EN CARPETA ---
+            try:
+                base_dir = os.path.dirname(os.path.dirname(__file__))
+                carpeta_tickets = os.path.join(base_dir, "tickets")
+                if not os.path.exists(carpeta_tickets):
+                    os.makedirs(carpeta_tickets)
+                
+                ruta_archivo = os.path.join(carpeta_tickets, f"Ticket_{id_alquiler}.txt")
+                with open(ruta_archivo, "w", encoding="utf-8") as archivo:
+                    archivo.write(mensaje_exito)
+            except Exception as e:
+                print(f"Error al guardar el ticket físico: {e}")
             
             self.lbl_mensaje.configure(text="")
             self.entry_inicio.delete(0, 'end')
             self.entry_fin.delete(0, 'end')
 
             VentanaComprobante(self, mensaje_exito)
+            
+            
+            self.actualizar_lista()
 
         except ValueError:
             self.lbl_mensaje.configure(text="❌ Error: Usá el formato DD/MM/AAAA.", text_color="#d83a3a")
+
+    def actualizar_lista(self):
+        for widget in self.scroll_lista.winfo_children():
+            widget.destroy()
+
+        alquileres = self.sistema.obtener_alquileres()
+        
+        if not alquileres:
+            ctk.CTkLabel(self.scroll_lista, text="Aún no hay alquileres registrados.", text_color="gray").pack(pady=20)
+            return
+
+        for a in alquileres:
+            fila = ctk.CTkFrame(self.scroll_lista, fg_color=("gray85", "gray20"), corner_radius=8)
+            fila.pack(fill="x", pady=5)
+            
+            frame_textos = ctk.CTkFrame(fila, fg_color="transparent")
+            frame_textos.pack(side="left", fill="both", expand=True)
+
+            # --- EL ARREGLO DE LOS COLORES ---
+            estado = "VIGENTE" if not a.esta_devuelto() else "DEVUELTO"
+            color_estado = "#2FA572" if not a.esta_devuelto() else "#d83a3a" # Verde o Rojo
+            
+            cliente = f"{a.get_cliente().get_nombre()} {a.get_cliente().get_apellido()}"
+            vehiculo = f"{a.get_vehiculo().get_marca()} {a.get_vehiculo().get_modelo()} ({a.get_vehiculo().get_patente()})"
+            fechas = f"{a.get_fecha_inicio().strftime('%d/%m/%Y')} al {a.get_fecha_fin().strftime('%d/%m/%Y')}"
+            precio_formateado = f"{a.calcular_monto_total():,.0f}".replace(",", ".")
+
+            texto_principal = f"Alquiler #{a.get_id_alquiler()}  |  {estado}"
+            texto_secundario = f"👤 {cliente}\n🚘 {vehiculo}\n📅 {fechas}  |  Total: ${precio_formateado}"
+
+            
+            lbl_principal = ctk.CTkLabel(frame_textos, text=texto_principal, font=("Arial", 14, "bold"), text_color=color_estado)
+            lbl_principal.pack(side="top", anchor="w", padx=15, pady=(10, 0))
+
+            lbl_secundario = ctk.CTkLabel(frame_textos, text=texto_secundario, font=("Arial", 12), text_color="gray", justify="left")
+            lbl_secundario.pack(side="top", anchor="w", padx=15, pady=(5, 10))
+
+            if not a.esta_devuelto():
+                btn_devolver = ctk.CTkButton(
+                    fila, text="Devolver", fg_color="#d83a3a", hover_color="#b02c2c", 
+                    width=80, height=30, font=ctk.CTkFont(weight="bold"),
+                    command=lambda obj=a: self.marcar_como_devuelto(obj)
+                )
+                btn_devolver.pack(side="right", padx=15)
+
+    def marcar_como_devuelto(self, alquiler):
+        
+        alquiler.registrar_devolucion()
+        
+        self.actualizar_lista()

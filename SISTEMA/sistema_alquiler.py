@@ -16,10 +16,10 @@ class SistemaAlquiler:
         self.__vehiculos.append(vehiculo)
 
     def procesar_alquiler(self, cliente, vehiculo, fecha_inicio, fecha_fin, sucursal=None):
-        # El sistema se encarga de generar el ID automáticamente
+        
         id_alquiler = len(self.__alquileres) + 1
         
-        # El sistema instancia el Alquiler 
+         
         nuevo_alquiler = Alquiler(id_alquiler, cliente, vehiculo, fecha_inicio, fecha_fin, sucursal)
         
         self.__alquileres.append(nuevo_alquiler)
